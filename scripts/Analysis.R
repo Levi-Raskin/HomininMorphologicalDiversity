@@ -30,12 +30,11 @@ for (i in 1:(160-16)) {
   tempFullMat <- tempFullMat[setdiff(rownames(tempFullMat), sampled_row), , drop = FALSE]
   
   garray <- geomorph::arrayspecs(subset_mat, numLandmarks, k = dimension)
-  gpa <- gpagen(garray, print.progress = FALSE)
+  gpa <- gpagen(garray, print.progress = FALSE, ProcD = TRUE)
   gdf <- geomorph.data.frame(gpa)
-  
-  
-  
+
   disparityPlotMat[i, ] <- c(i + 16, as.numeric(morphol.disparity(coords ~ 1, groups = NULL, data = gdf, print.progress = FALSE)) )
 }
 
+colnames(disparityPlotMat) <- c("num taxa", "disparity")
 plot(disparityPlotMat)
