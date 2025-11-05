@@ -70,4 +70,35 @@ colnames(chullPlotMat) <- c("num taxa", "subset hull volume")
 plot(chullPlotMat)
 
 
+garray <- geomorph::arrayspecs(pcaMat, numLandmarks, k = dimension)
+gpa <- gpagen(garray, print.progress = FALSE, ProcD = TRUE)
+fullSpecimenPCA <- geomorph::gm.prcomp(gpa$coords)
+fullSpecimenPCs <- fullSpecimenPCA$x[, 1:3] # just axes 1:3
 
+full_hull <- convhulln(fullSpecimenPCs, options = "FA")
+full_vol <- full_hull$vol
+
+subset_mat <- fullSpecimenPCs[!grepl("^Tip", rownames(fullSpecimenPCs)), , drop = FALSE]
+tempFullMat <- fullSpecimenPCs
+chullPlotMat <- matrix(NA, nrow = 160 - 16, ncol = 2)
+
+subset_hull <- convhulln(subset_mat, options = "FA")
+prev_vol <- subset_hull$vol  # store previous total volume
+
+for (i in 1:(160 - 16)) {
+  tip_rows <- grep("^Tip", rownames(tempFullMat), value = TRUE)
+  sampled_row <- sample(tip_rows, 1)
+  subset_mat <- rbind(subset_mat, tempFullMat[sampled_row, , drop = FALSE])
+  tempFullMat <- tempFullMat[setdiff(rownames(tempFullMat), sampled_row), , drop = FALSE]
+  
+  subset_hull <- convhulln(subset_mat, options = "FA")
+  subset_vol <- subset_hull$vol
+  
+  vol_gain <- subset_vol - prev_vol  # difference from last total volume
+  chullPlotMat[i, ] <- c(i + 16, vol_gain)
+  
+  prev_vol <- subset_vol  # update for next iteration
+}
+
+colnames(chullPlotMat) <- c("num taxa", "volume gained with each add. taxon")
+plot(chullPlotMat)
