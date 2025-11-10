@@ -1,2 +1,5 @@
 results/*
 /results
+scripts/.Rhistory
+results/.DS_Store
+.DS_Store
