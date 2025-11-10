@@ -2,6 +2,8 @@ library(geomorph)
 library(geometry)
 library(parallel)
 
+set.seed(5)
+
 landmarks <- read.delim("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapes/twoDimensionSimTreeIndex6Alpha1.000000Beta1.000000LM25Rate0.300000Dataset0nodeShapes.tsv", header = F)
 cn <- colnames(landmarks)
 cn[1] <- "label"
@@ -114,16 +116,18 @@ outputDisparity <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/
 outputMorphospace <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/analysisResults/morphospace/"
 
 files <- list.files("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapes", full.names = T)
-
+saveRDS(files, "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
+#files <- readRDS("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
 
 total_files <- length(files)
 start_all <- Sys.time()
 
 cat("Starting analysis of", total_files, "files at", format(start_all), "\n\n")
 
-for (f_idx in seq_along(files)) {
-  f <- files[f_idx]
+while (length(files) > 0) {
+  f <- files[1]
   start_file <- Sys.time()
+  f_idx <- total_files - length(files) + 1
   
   cat(sprintf("[%d/%d] Processing file: %s\n", f_idx, total_files, basename(f)))
   
@@ -155,7 +159,11 @@ for (f_idx in seq_along(files)) {
   dataset = as.integer(mat[,"dataset"])
   
   ### only analyze the first 99 of these for paleoanthro abstract ###
-  if(treeIndex > 99){
+  if (treeIndex > 99) {
+    cat(sprintf("[%d/%d] Skipping file %s (TreeIdx > 99)\n",
+                f_idx, total_files, basename(f)))
+    files <- files[-1]
+    saveRDS(files, "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
     next
   }
   
@@ -256,6 +264,10 @@ for (f_idx in seq_along(files)) {
   ))
   end_morpho <- Sys.time()
   cat("  Morphospace completed in", round(difftime(end_morpho, start_morpho, units="mins"), 2), "minutes\n")
+  
+  ### remove file from files so that we avoid reanalysis if R crashes, etc. ###
+  files <- files[-1]
+  saveRDS(files, "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
   
   end_file <- Sys.time()
   elapsed_file <- as.numeric(difftime(end_file, start_file, units="mins"))
