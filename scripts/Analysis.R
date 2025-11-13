@@ -115,9 +115,9 @@ numRepetitions <- 100 #number of disparty/morpho variance vs. num taxa subsampli
 outputDisparity <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/analysisResults/disparity/"
 outputMorphospace <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/analysisResults/morphospace/"
 
-files <- list.files("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapes", full.names = T)
-saveRDS(files, "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
-#files <- readRDS("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
+# files <- list.files("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapes", full.names = T)
+# saveRDS(files, "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
+files <- readRDS("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapesToAnalyze.rds")
 
 total_files <- length(files)
 start_all <- Sys.time()
