@@ -2,7 +2,7 @@ library(ggplot2)
 library(ggtree)
 library(phytools)
 
-output <- 
+output <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/figures/"
 
 ### LDDMM Stacks ###
 treeList <- read.delim(
@@ -17,10 +17,25 @@ p1 <- ggtree(tree)+
   xlim(NA, 5)
 p1 <- ggtree::rotate(p1, 32)
 p1
-ggsave(paste(output, "tree1LDDMMContTraits.svg", sep = ""), p1)
+ggsave(paste(output, "tree1LDDMM.svg", sep = ""), p1)
 
 #LDDMMM stacks
-lddmmRes1Alpha0.2 <- read.delim("resultsGit/twoDimensionSimTreeIndex0LM10Alpha0.100000Dataset1nodeShapes.tsv", header = FALSE)
+shapeInputFile2D <- 
+  paste0(
+    "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapes/",
+    "numLandmarks", 10, "/",
+    "numAdditionalTaxa", 3 ,  "/" ,
+    "alpha" , 0.1 , "0" ,  "/" ,
+    "2D_TreeIndex" , 0,
+    "_TreeAlpha1.00_TreeBeta1.00_" , 
+    "NumAdditionalTaxa", 3 ,
+    "_numLandmarks" , 10 ,
+    "_lddmmAlpha" , 0.1 , "0" ,
+    "_Sigma1.00",
+    "_rep" , 0 ,
+    "nodeShapes.tsv.gz"
+  )
+lddmmRes1Alpha0.2 <- read.delim(gzfile(shapeInputFile2D), header = FALSE)
 colnames(lddmmRes1Alpha0.2) <- c("taxon", "id", "x", "y")
 lddmmRes1Alpha0.2$taxon <- gsub("_", lddmmRes1Alpha0.2$taxon, replacement = " ")
 
