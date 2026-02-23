@@ -109,102 +109,214 @@ for(nlm in numLandmarks){
         )
       }
       
-      for(treeIdx in 0:(numTrees-1)){
-        #create data storage obj
-        resultsMatrix2D <- matrix(data = NA, nrow = numReps, ncol = 2)
-        colnames(resultsMatrix2D) <- c("homininSubsetChullVolume", "fullChullVolume")
-        resultsMatrix3D <- matrix(data = NA, nrow = numReps, ncol = 2)
-        colnames(resultsMatrix3D) <- c("homininSubsetChullVolume", "fullChullVolume")
+      if(a == 0.1 && nlm == 10 && nt  < 25){
         
-        for(rep in 0:(numReps-1)){
-          #2D analysis
-          shapeInputFile2D <- 
+      }else if(a == 0.1 && nlm == 10 && nt == 25){
+        
+        for(treeIdx in 780:(numTrees-1)){
+          #create data storage obj
+          resultsMatrix2D <- matrix(data = NA, nrow = numReps, ncol = 2)
+          colnames(resultsMatrix2D) <- c("homininSubsetChullVolume", "fullChullVolume")
+          resultsMatrix3D <- matrix(data = NA, nrow = numReps, ncol = 2)
+          colnames(resultsMatrix3D) <- c("homininSubsetChullVolume", "fullChullVolume")
+          
+          for(rep in 0:(numReps-1)){
+            #2D analysis
+            shapeInputFile2D <- 
+              paste0(
+                input,
+                "numLandmarks", nlm, "/",
+                "numAdditionalTaxa", nt ,  "/" ,
+                "alpha" , a , "0" ,  "/" ,
+                "2D_TreeIndex" , treeIdx,
+                "_TreeAlpha1.00_TreeBeta1.00_" , 
+                "NumAdditionalTaxa", nt ,
+                "_numLandmarks" , nlm ,
+                "_lddmmAlpha" , a , "0" ,
+                "_Sigma1.00",
+                "_rep" , rep ,
+                "nodeShapes.tsv.gz"
+              )
+            
+            con <- gzfile(shapeInputFile2D)
+            readFile <- read.delim(con, header = F)
+            
+            tryCatch({
+              resultsMatrix2D[rep + 1, ] <- morphospaceVolume(readFile)
+            }, error = function(e) {
+              
+            })
+            
+            #3D analysis
+            shapeInputFile3D <- 
+              paste0(
+                input,
+                "numLandmarks", nlm, "/",
+                "numAdditionalTaxa", nt ,  "/" ,
+                "alpha" , a , "0" ,  "/" ,
+                "3D_TreeIndex" , treeIdx,
+                "_TreeAlpha1.00_TreeBeta1.00_" , 
+                "NumAdditionalTaxa", nt ,
+                "_numLandmarks" , nlm ,
+                "_lddmmAlpha" , a , "0" ,
+                "_Sigma1.00",
+                "_rep" , rep ,
+                "nodeShapes.tsv.gz"
+              )
+            
+            con <- gzfile(shapeInputFile3D)
+            readFile <- read.delim(con, header = F)
+            
+            tryCatch({
+              resultsMatrix3D[rep + 1, ] <- morphospaceVolume(readFile)
+            }, error = function(e) {
+              
+            })
+            rm(readFile)
+          } 
+          
+          #write data storage obj to memory
+          saveRDS(
+            resultsMatrix2D,
             paste0(
-            input,
-            "numLandmarks", nlm, "/",
-            "numAdditionalTaxa", nt ,  "/" ,
-            "alpha" , a , "0" ,  "/" ,
-            "2D_TreeIndex" , treeIdx,
-            "_TreeAlpha1.00_TreeBeta1.00_" , 
-            "NumAdditionalTaxa", nt ,
-            "_numLandmarks" , nlm ,
-            "_lddmmAlpha" , a , "0" ,
-            "_Sigma1.00",
-            "_rep" , rep ,
-            "nodeShapes.tsv.gz"
+              outdir,
+              "2D_TreeIndex" , treeIdx,
+              "_TreeAlpha1.00_TreeBeta1.00_" , 
+              "NumAdditionalTaxa", nt ,
+              "_numLandmarks" , nlm ,
+              "_lddmmAlpha" , a , "0" ,
+              "_Sigma1.00.rds"
             )
-          
-          con <- gzfile(shapeInputFile2D)
-          readFile <- read.delim(con, header = F)
-
-          resultsMatrix2D[rep + 1, ] <- morphospaceVolume(readFile)
-          
-          #3D analysis
-          shapeInputFile3D <- 
+          )
+          saveRDS(
+            resultsMatrix3D,
             paste0(
-              input,
-              "numLandmarks", nlm, "/",
-              "numAdditionalTaxa", nt ,  "/" ,
-              "alpha" , a , "0" ,  "/" ,
+              outdir,
               "3D_TreeIndex" , treeIdx,
               "_TreeAlpha1.00_TreeBeta1.00_" , 
               "NumAdditionalTaxa", nt ,
               "_numLandmarks" , nlm ,
               "_lddmmAlpha" , a , "0" ,
-              "_Sigma1.00",
-              "_rep" , rep ,
-              "nodeShapes.tsv.gz"
+              "_Sigma1.00.rds"
             )
-          
-          con <- gzfile(shapeInputFile3D)
-          readFile <- read.delim(con, header = F)
-          
-          resultsMatrix3D[rep + 1, ] <- morphospaceVolume(readFile)
-          rm(readFile)
-        } 
-        
-        #write data storage obj to memory
-        saveRDS(
-          resultsMatrix2D,
-          paste0(
-            outdir,
-            "2D_TreeIndex" , treeIdx,
-            "_TreeAlpha1.00_TreeBeta1.00_" , 
-            "NumAdditionalTaxa", nt ,
-            "_numLandmarks" , nlm ,
-            "_lddmmAlpha" , a , "0" ,
-            "_Sigma1.00.rds"
           )
-        )
-        saveRDS(
-          resultsMatrix3D,
-          paste0(
-            outdir,
-            "3D_TreeIndex" , treeIdx,
-            "_TreeAlpha1.00_TreeBeta1.00_" , 
-            "NumAdditionalTaxa", nt ,
-            "_numLandmarks" , nlm ,
-            "_lddmmAlpha" , a , "0" ,
-            "_Sigma1.00.rds"
+          
+          
+          #ETA tracking
+          completedIterations <- completedIterations + 1
+          elapsed <- as.numeric(difftime(Sys.time(), startTime, units = "secs"))
+          avgSecsPerIter <- elapsed / completedIterations
+          remainingIters <- totalIterations - completedIterations
+          etaSecs <- avgSecsPerIter * remainingIters
+          etaTime <- Sys.time() + etaSecs
+          
+          message(sprintf(
+            "[%d/%d] nlm=%s a=%s nt=%s treeIdx=%d | Elapsed: %.1f min | ETA: %s",
+            completedIterations, totalIterations,
+            nlm, a, nt, treeIdx,
+            elapsed / 60,
+            format(etaTime, "%Y-%m-%d %H:%M:%S")
+          ))
+        }
+        
+      }else{
+        for(treeIdx in 0:(numTrees-1)){
+          #create data storage obj
+          resultsMatrix2D <- matrix(data = NA, nrow = numReps, ncol = 2)
+          colnames(resultsMatrix2D) <- c("homininSubsetChullVolume", "fullChullVolume")
+          resultsMatrix3D <- matrix(data = NA, nrow = numReps, ncol = 2)
+          colnames(resultsMatrix3D) <- c("homininSubsetChullVolume", "fullChullVolume")
+          
+          for(rep in 0:(numReps-1)){
+            #2D analysis
+            shapeInputFile2D <- 
+              paste0(
+                input,
+                "numLandmarks", nlm, "/",
+                "numAdditionalTaxa", nt ,  "/" ,
+                "alpha" , a , "0" ,  "/" ,
+                "2D_TreeIndex" , treeIdx,
+                "_TreeAlpha1.00_TreeBeta1.00_" , 
+                "NumAdditionalTaxa", nt ,
+                "_numLandmarks" , nlm ,
+                "_lddmmAlpha" , a , "0" ,
+                "_Sigma1.00",
+                "_rep" , rep ,
+                "nodeShapes.tsv.gz"
+              )
+            
+            con <- gzfile(shapeInputFile2D)
+            readFile <- read.delim(con, header = F)
+            
+            resultsMatrix2D[rep + 1, ] <- morphospaceVolume(readFile)
+            
+            #3D analysis
+            shapeInputFile3D <- 
+              paste0(
+                input,
+                "numLandmarks", nlm, "/",
+                "numAdditionalTaxa", nt ,  "/" ,
+                "alpha" , a , "0" ,  "/" ,
+                "3D_TreeIndex" , treeIdx,
+                "_TreeAlpha1.00_TreeBeta1.00_" , 
+                "NumAdditionalTaxa", nt ,
+                "_numLandmarks" , nlm ,
+                "_lddmmAlpha" , a , "0" ,
+                "_Sigma1.00",
+                "_rep" , rep ,
+                "nodeShapes.tsv.gz"
+              )
+            
+            con <- gzfile(shapeInputFile3D)
+            readFile <- read.delim(con, header = F)
+            
+            resultsMatrix3D[rep + 1, ] <- morphospaceVolume(readFile)
+            rm(readFile)
+          } 
+          
+          #write data storage obj to memory
+          saveRDS(
+            resultsMatrix2D,
+            paste0(
+              outdir,
+              "2D_TreeIndex" , treeIdx,
+              "_TreeAlpha1.00_TreeBeta1.00_" , 
+              "NumAdditionalTaxa", nt ,
+              "_numLandmarks" , nlm ,
+              "_lddmmAlpha" , a , "0" ,
+              "_Sigma1.00.rds"
+            )
           )
-        )
-        
-        
-        #ETA tracking
-        completedIterations <- completedIterations + 1
-        elapsed <- as.numeric(difftime(Sys.time(), startTime, units = "secs"))
-        avgSecsPerIter <- elapsed / completedIterations
-        remainingIters <- totalIterations - completedIterations
-        etaSecs <- avgSecsPerIter * remainingIters
-        etaTime <- Sys.time() + etaSecs
-        
-        message(sprintf(
-          "[%d/%d] nlm=%s a=%s nt=%s treeIdx=%d | Elapsed: %.1f min | ETA: %s",
-          completedIterations, totalIterations,
-          nlm, a, nt, treeIdx,
-          elapsed / 60,
-          format(etaTime, "%Y-%m-%d %H:%M:%S")
-        ))
+          saveRDS(
+            resultsMatrix3D,
+            paste0(
+              outdir,
+              "3D_TreeIndex" , treeIdx,
+              "_TreeAlpha1.00_TreeBeta1.00_" , 
+              "NumAdditionalTaxa", nt ,
+              "_numLandmarks" , nlm ,
+              "_lddmmAlpha" , a , "0" ,
+              "_Sigma1.00.rds"
+            )
+          )
+          
+          
+          #ETA tracking
+          completedIterations <- completedIterations + 1
+          elapsed <- as.numeric(difftime(Sys.time(), startTime, units = "secs"))
+          avgSecsPerIter <- elapsed / completedIterations
+          remainingIters <- totalIterations - completedIterations
+          etaSecs <- avgSecsPerIter * remainingIters
+          etaTime <- Sys.time() + etaSecs
+          
+          message(sprintf(
+            "[%d/%d] nlm=%s a=%s nt=%s treeIdx=%d | Elapsed: %.1f min | ETA: %s",
+            completedIterations, totalIterations,
+            nlm, a, nt, treeIdx,
+            elapsed / 60,
+            format(etaTime, "%Y-%m-%d %H:%M:%S")
+          ))
+        }
       }
       
       gc()
