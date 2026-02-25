@@ -86,14 +86,64 @@ totalIterations <- length(numLandmarks) * length(alphas) * length(numAdditionalT
 completedIterations <- 0
 startTime <- Sys.time()
 
-processTree <- function(
+processData2D <- function(
     numLand,
     lddmmAlpha,
     numAddTax, 
-    treeIdx,
-    rep
+    tIdx,
+    r
 ){
+  #2D analysis
+  shapeInputFile2D <- 
+    paste0(
+      input,
+      "numLandmarks", numLand, "/",
+      "numAdditionalTaxa", numAddTax ,  "/" ,
+      "alpha" , lddmmAlpha , "0" ,  "/" ,
+      "2D_TreeIndex" , tIdx,
+      "_TreeAlpha1.00_TreeBeta1.00_" , 
+      "NumAdditionalTaxa", numAddTax ,
+      "_numLandmarks" , numLand ,
+      "_lddmmAlpha" , lddmmAlpha , "0" ,
+      "_Sigma1.00",
+      "_rep" , r ,
+      "nodeShapes.tsv.gz"
+    )
   
+  con <- gzfile(shapeInputFile2D)
+  readFile <- read.delim(con, header = F)
+  
+  return(morphospaceVolume(readFile))
+}
+
+processData3D <- function(
+    numLand,
+    lddmmAlpha,
+    numAddTax, 
+    tIdx,
+    r
+){
+  #3D analysis
+  shapeInputFile3D <- 
+    paste0(
+      input,
+      "numLandmarks", nlm, "/",
+      "numAdditionalTaxa", nt ,  "/" ,
+      "alpha" , a , "0" ,  "/" ,
+      "3D_TreeIndex" , tIdx,
+      "_TreeAlpha1.00_TreeBeta1.00_" , 
+      "NumAdditionalTaxa", nt ,
+      "_numLandmarks" , nlm ,
+      "_lddmmAlpha" , a , "0" ,
+      "_Sigma1.00",
+      "_rep" , r ,
+      "nodeShapes.tsv.gz"
+    )
+  
+  con <- gzfile(shapeInputFile3D)
+  readFile <- read.delim(con, header = F)
+  
+  return(morphospaceVolume(readFile))
 }
 
 for(nlm in numLandmarks){
@@ -116,59 +166,40 @@ for(nlm in numLandmarks){
       
       for(treeIdx in 0:(numTrees-1)){
           #create data storage obj
-          resultsMatrix2D <- matrix(data = NA, nrow = numReps, ncol = 2)
-          resultsMatrix3D <- matrix(data = NA, nrow = numReps, ncol = 2)
-          
-          colnames(resultsMatrix2D) <- c("homininSubsetChullVolume", "fullChullVolume")
-          colnames(resultsMatrix3D) <- c("homininSubsetChullVolume", "fullChullVolume")
-          
-          for(rep in 0:(numReps-1)){
-            #2D analysis
-            shapeInputFile2D <- 
-              paste0(
-                input,
-                "numLandmarks", nlm, "/",
-                "numAdditionalTaxa", nt ,  "/" ,
-                "alpha" , a , "0" ,  "/" ,
-                "2D_TreeIndex" , treeIdx,
-                "_TreeAlpha1.00_TreeBeta1.00_" , 
-                "NumAdditionalTaxa", nt ,
-                "_numLandmarks" , nlm ,
-                "_lddmmAlpha" , a , "0" ,
-                "_Sigma1.00",
-                "_rep" , rep ,
-                "nodeShapes.tsv.gz"
+          resultsMatrix2D <- mclapply(
+            X = 0:(numReps-1),
+            FUN = function(rep){
+                processData2D(
+                  nlm,
+                  a,
+                  nt, 
+                  treeIdx,
+                  rep
+                )
+              }
+            ,
+            mc.cores = 2
+          )
+          resultsMatrix2D <- as.data.frame(do.call(rbind, resultsMatrix2D))
+
+          resultsMatrix3D <- mclapply(
+            X = 0:(numReps-1),
+            FUN = function(rep){
+              processData3D(
+                nlm,
+                a,
+                nt, 
+                treeIdx,
+                rep
               )
-            
-            con <- gzfile(shapeInputFile2D)
-            readFile <- read.delim(con, header = F)
-            
-            resultsMatrix2D[rep + 1, ] <- morphospaceVolume(readFile)
-            
-            #3D analysis
-            shapeInputFile3D <- 
-              paste0(
-                input,
-                "numLandmarks", nlm, "/",
-                "numAdditionalTaxa", nt ,  "/" ,
-                "alpha" , a , "0" ,  "/" ,
-                "3D_TreeIndex" , treeIdx,
-                "_TreeAlpha1.00_TreeBeta1.00_" , 
-                "NumAdditionalTaxa", nt ,
-                "_numLandmarks" , nlm ,
-                "_lddmmAlpha" , a , "0" ,
-                "_Sigma1.00",
-                "_rep" , rep ,
-                "nodeShapes.tsv.gz"
-              )
-            
-            con <- gzfile(shapeInputFile3D)
-            readFile <- read.delim(con, header = F)
-            
-            resultsMatrix3D[rep + 1, ] <- morphospaceVolume(readFile)
-            rm(readFile)
-          } 
+            }
+            ,
+            mc.cores = 2
+          )
           
+          resultsMatrix3D <- as.data.frame(do.call(rbind, resultsMatrix3D))
+          
+         
           #write data storage obj to memory
           saveRDS(
             resultsMatrix2D,
