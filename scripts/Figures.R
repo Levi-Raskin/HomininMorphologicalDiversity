@@ -15,8 +15,7 @@ betaDistAlpha = 1.0
 betaDistBeta = 1.0
 
 #variable parameters
-# alphas = c(0.1, 0.2, 0.3, 0.4)
-alphas = c(0.1)
+alphas = c(0.1, 0.2, 0.3, 0.4)
 numAdditionalTaxa = c(3, 5, 8, 11, 15, 20, 25, 50, 100, 144)
 #numLandmarks = c(10, 25, 50)
 numLandmarks = c(10)
