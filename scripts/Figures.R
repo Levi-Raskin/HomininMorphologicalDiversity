@@ -3,169 +3,139 @@ library(ggtree)
 library(phytools)
 
 output <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/figures/"
+outputMorphospace <- "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/analysisResults/morphospace/"
 
-### LDDMM Stacks ###
-treeList <- read.delim(
-  gzfile("/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedTrees/numLandmarks10/numAdditionalTaxa5/alpha0.10/TreeIndex0_TreeAlpha1.00_TreeBeta1.00_NumAdditionalTaxa5.tsv.gz"),
-  header = F
+
+# num add tax, alpha = 0.1 ------------------------------------------------
+
+numReps = 100 #number of resims per condition
+numTrees = 1000 #number of trees we analyzed
+lddmmSigma = 1.0
+betaDistAlpha = 1.0
+betaDistBeta = 1.0
+
+#variable parameters
+# alphas = c(0.1, 0.2, 0.3, 0.4)
+alphas = c(0.1)
+numAdditionalTaxa = c(3, 5, 8, 11, 15, 20, 25, 50, 100, 144)
+#numLandmarks = c(10, 25, 50)
+numLandmarks = c(10)
+
+twoDimensionalPlotDat <- matrix(data = NA,
+                  nrow = 0,
+                  ncol = 4)
+colnames(twoDimensionalPlotDat) <- c(
+  "numLandmarks",
+  "alpha",
+  "numAdditionalTaxa",
+  "percentRecovered"
 )
-tree <- read.tree(text =treeList[1,1])
 
-tree$tip.label <- gsub("_", tree$tip.label, replacement = " ")
-p1 <- ggtree(tree)+
-  geom_tiplab(fontface = 4)+
-  xlim(NA, 5)
-p1 <- ggtree::rotate(p1, 32)
-p1
-ggsave(paste(output, "tree1LDDMM.svg", sep = ""), p1)
+threeDimensionalPlotDat <- matrix(data = NA,
+                                nrow = 0,
+                                ncol = 4)
+colnames(threeDimensionalPlotDat) <- c(
+  "numLandmarks",
+  "alpha",
+  "numAdditionalTaxa",
+  "percentRecovered"
+)
 
-#LDDMMM stacks
-shapeInputFile2D <- 
-  paste0(
-    "/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/simulatedShapes/",
-    "numLandmarks", 10, "/",
-    "numAdditionalTaxa", 3 ,  "/" ,
-    "alpha" , 0.1 , "0" ,  "/" ,
-    "2D_TreeIndex" , 0,
-    "_TreeAlpha1.00_TreeBeta1.00_" , 
-    "NumAdditionalTaxa", 3 ,
-    "_numLandmarks" , 10 ,
-    "_lddmmAlpha" , 0.1 , "0" ,
-    "_Sigma1.00",
-    "_rep" , 0 ,
-    "nodeShapes.tsv.gz"
-  )
-lddmmRes1Alpha0.2 <- read.delim(gzfile(shapeInputFile2D), header = FALSE)
-colnames(lddmmRes1Alpha0.2) <- c("taxon", "id", "x", "y")
-lddmmRes1Alpha0.2$taxon <- gsub("_", lddmmRes1Alpha0.2$taxon, replacement = " ")
-
-tip_order <- p1$data %>%
-  filter(isTip) %>%
-  arrange(-y) %>%
-  pull(label)
-
-# Generate plots with fixed axis limits
-x_range <- range(lddmmRes1Alpha0.2$x)
-
-# Make individual plots with custom y range
-stackFunc <- function(tip) {
-  dat <- filter(lddmmRes1Alpha0.2, taxon == tip)
-  
-  #center dat
-  dat$x <- dat$x - mean(dat$x)
-  dat$y <- dat$y - mean(dat$y)
-  
-  y_pad <- 0.5 # Add vertical padding
-  y_min <- min(dat$y) - y_pad
-  y_max <- max(dat$y) + y_pad
-  
-  x_pad <- 0.5  # Add vertical padding
-  x_min <- min(dat$x) - x_pad
-  x_max <- max(dat$x) + x_pad
-  
-  connections_sim <- dat %>%
-    arrange(id) %>%
-    mutate(lm_next = lead(id),
-           x_next = lead(x),
-           y_next = lead(y))
-  
-  # For the last point, set next to the first point (to close the loop)
-  connections_sim[nrow(connections_sim), c("id_next", "x_next", "y_next")] <- 
-    c(dat$id[1], dat$x[1], dat$y[1])
-  
-  ggplot(dat, aes(x = x, y = y)) +
-    geom_point(size = 1.5, alpha = 0.8) +
-    geom_segment(data = connections_sim,
-                 aes(x = x, y = y, xend = x_next, yend = y_next),
-                 color = "black", size = 1)+
-    coord_cartesian(xlim = c(x_min, x_max), ylim = c(y_min, y_max)) +
-    theme_minimal() +
-    ggtitle(tip) +
-    theme(
-      plot.title = element_text(hjust = 0, size = 9),
-      axis.title = element_blank(),
-      axis.text = element_blank(),
-      axis.ticks = element_blank(),
-      panel.grid = element_blank(),
-      plot.margin = margin(2, 2, 2, 2)
-    )
+for(nlm in numLandmarks){
+  for(a in alphas){
+    for(nt in numAdditionalTaxa){
+      outdir <- paste0(
+        outputMorphospace,
+        "numLandmarks", nlm, "/",
+        "numAdditionalTaxa", nt ,  "/" ,
+        "alpha" , a , "0" ,  "/"
+      )
+      
+      numLandmarks <- rep(nlm, 100)
+      lddmmAlpha <- rep(a, 100)
+      numAddTax <- rep(nt, 100)
+      
+      for(treeIdx in 0:(numTrees-1)){
+        
+        twoD <- readRDS(
+          paste0(
+            outdir,
+            "2D_TreeIndex" , treeIdx,
+            "_TreeAlpha1.00_TreeBeta1.00_" , 
+            "NumAdditionalTaxa", nt ,
+            "_numLandmarks" , nlm ,
+            "_lddmmAlpha" , a , "0" ,
+            "_Sigma1.00.rds"
+          )
+        )
+        
+        temp <- cbind(
+          numLandmarks,
+          lddmmAlpha,
+          numAddTax,
+          twoD[,1] / twoD[,2]
+        )
+        
+        twoDimensionalPlotDat <- rbind(twoDimensionalPlotDat, temp)
+        
+        if(any(is.na(twoD))){
+          print(paste0(
+            "NA HERE: ",
+            outdir,
+            "2D_TreeIndex" , treeIdx,
+            "_TreeAlpha1.00_TreeBeta1.00_" , 
+            "NumAdditionalTaxa", nt ,
+            "_numLandmarks" , nlm ,
+            "_lddmmAlpha" , a , "0" ,
+            "_Sigma1.00.rds"
+          ))
+        }
+        
+        threeD <- readRDS(
+          paste0(
+            outdir,
+            "3D_TreeIndex" , treeIdx,
+            "_TreeAlpha1.00_TreeBeta1.00_" , 
+            "NumAdditionalTaxa", nt ,
+            "_numLandmarks" , nlm ,
+            "_lddmmAlpha" , a , "0" ,
+            "_Sigma1.00.rds"
+          )
+        )
+        
+        if(any(is.na(threeD))){
+          print(paste0(
+            "NA HERE: ",
+            outdir,
+            "2D_TreeIndex" , treeIdx,
+            "_TreeAlpha1.00_TreeBeta1.00_" , 
+            "NumAdditionalTaxa", nt ,
+            "_numLandmarks" , nlm ,
+            "_lddmmAlpha" , a , "0" ,
+            "_Sigma1.00.rds"
+          ))
+        }
+        
+        temp <- cbind(
+          numLandmarks,
+          lddmmAlpha,
+          numAddTax,
+          threeD[,1] / threeD[,2]
+        )
+        
+        threeDimensionalPlotDat <- rbind(threeDimensionalPlotDat, temp)
+        
+      }
+      
+      print(paste(
+        "a: ", a,
+        "nt: ", nt,
+        "nlm: ", nlm
+      ))
+    }
+  }
 }
-plots <- lapply(tip_order, stackFunc)
 
-# Stack vertically
-stack_plot <-patchwork::wrap_plots(plots, ncol = 1)
-stack_plot
-ggsave(paste(output, "fig1LDDMMAlpha0.1.svg", sep = ""), 
-       stack_plot, 
-       width = 2,
-       height = 42)
+twoDimensionalPlotDat <- data.frame(twoDimensionalPlotDat)
+threeDimensionalPlotDat <- data.frame(threeDimensionalPlotDat)
 
-
-lddmmRes1Alpha0.2 <- read.delim("resultsGit/twoDimensionSimTreeIndex0LM10Alpha0.200000Dataset1nodeShapes.tsv", header = FALSE)
-colnames(lddmmRes1Alpha0.2) <- c("taxon", "id", "x", "y")
-lddmmRes1Alpha0.2$taxon <- gsub("_", lddmmRes1Alpha0.2$taxon, replacement = " ")
-
-tip_order <- p1$data %>%
-  filter(isTip) %>%
-  arrange(-y) %>%
-  pull(label)
-
-# Generate plots with fixed axis limits
-x_range <- range(lddmmRes1Alpha0.2$x)
-
-# Make individual plots with custom y range
-plots <- lapply(tip_order, stackFunc)
-
-# Stack vertically
-stack_plot <-patchwork::wrap_plots(plots, ncol = 1)
-stack_plot
-ggsave(paste(output, "fig1LDDMMAlpha0.2.svg", sep = ""), 
-       stack_plot, 
-       width = 2,
-       height = 42)
-
-lddmmRes1Alpha0.2 <- read.delim("resultsGit/twoDimensionSimTreeIndex0LM10Alpha0.300000Dataset1nodeShapes.tsv", header = FALSE)
-colnames(lddmmRes1Alpha0.2) <- c("taxon", "id", "x", "y")
-lddmmRes1Alpha0.2$taxon <- gsub("_", lddmmRes1Alpha0.2$taxon, replacement = " ")
-
-tip_order <- p1$data %>%
-  filter(isTip) %>%
-  arrange(-y) %>%
-  pull(label)
-
-# Generate plots with fixed axis limits
-x_range <- range(lddmmRes1Alpha0.2$x)
-
-# Make individual plots with custom y range
-plots <- lapply(tip_order, stackFunc)
-
-# Stack vertically
-stack_plot <-patchwork::wrap_plots(plots, ncol = 1)
-stack_plot
-ggsave(paste(output, "fig1LDDMMAlpha0.3.svg", sep = ""), 
-       stack_plot, 
-       width = 2,
-       height = 42)
-
-lddmmRes1Alpha0.2 <- read.delim("resultsGit/twoDimensionSimTreeIndex0LM10Alpha0.400000Dataset1nodeShapes.tsv", header = FALSE)
-colnames(lddmmRes1Alpha0.2) <- c("taxon", "id", "x", "y")
-lddmmRes1Alpha0.2$taxon <- gsub("_", lddmmRes1Alpha0.2$taxon, replacement = " ")
-
-tip_order <- p1$data %>%
-  filter(isTip) %>%
-  arrange(-y) %>%
-  pull(label)
-
-# Generate plots with fixed axis limits
-x_range <- range(lddmmRes1Alpha0.2$x)
-
-# Make individual plots with custom y range
-plots <- lapply(tip_order, stackFunc)
-
-# Stack vertically
-stack_plot <-patchwork::wrap_plots(plots, ncol = 1)
-stack_plot
-ggsave(paste(output, "fig1LDDMMAlpha0.4.svg", sep = ""), 
-       stack_plot, 
-       width = 2,
-       height = 42)
