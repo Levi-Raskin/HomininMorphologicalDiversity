@@ -21,12 +21,6 @@ lddmmSigma = 1.0
 betaDistAlpha = 1.0
 betaDistBeta = 1.0
 
-#variable parameters
-alphas = c(0.1, 0.2, 0.3, 0.4)
-numAdditionalTaxa = c(3, 5, 8, 11, 15, 20, 25, 50, 100, 144)
-#numLandmarks = c(10, 25, 50)
-numLandmarks = c(10, 25)
-
 #analysis functions
 
 morphospaceVolume <- function(lmDF){
@@ -80,11 +74,6 @@ morphospaceVolume <- function(lmDF){
 }
 
 # Morphological volume ----------------------------------------------------
-
-#ETA tracker
-totalIterations <- length(numLandmarks) * length(alphas) * length(numAdditionalTaxa) * numTrees
-completedIterations <- 0
-startTime <- Sys.time()
 
 processData2D <- function(
     numLand,
@@ -146,8 +135,37 @@ processData3D <- function(
   return(morphospaceVolume(readFile))
 }
 
+# alphas = c(0.1, 0.2, 0.3, 0.4)
+# numAdditionalTaxa = c(3, 5, 8, 11, 15, 20, 25, 50, 100, 144)
+numLandmarks = c(10, 25, 50)
+
+totalIter <- 0
 for(nlm in numLandmarks){
+  if(nlm == 10){ alphas = c(0.3, 0.4) } else { alphas = c(0.1, 0.2, 0.3, 0.4) }
   for(a in alphas){
+    if(nlm == 10 && a == 0.3){ numAdditionalTaxa = c(144) } else { numAdditionalTaxa = c(3, 5, 8, 11, 15, 20, 25, 50, 100, 144) }
+    totalIter <- totalIter + length(numAdditionalTaxa) * numTrees
+  }
+}
+
+completedIter <- 0
+startTime <- Sys.time()
+
+for(nlm in numLandmarks){
+  
+  if(nlm == 10){
+    alphas = c(0.3, 0.4)
+  }else{
+    alphas = c(0.1, 0.2, 0.3, 0.4)
+  }
+  
+  for(a in alphas){
+    if(nlm == 10 && a == 0.3){
+      numAdditionalTaxa = c(144)
+    }else{
+      numAdditionalTaxa = c(3, 5, 8, 11, 15, 20, 25, 50, 100, 144)
+    }
+    
     for(nt in numAdditionalTaxa){
       
       #create output directory
@@ -178,7 +196,7 @@ for(nlm in numLandmarks){
                 )
               }
             ,
-            mc.cores = 2
+            mc.cores = 10
           )
           resultsMatrix2D <- as.data.frame(do.call(rbind, resultsMatrix2D))
 
@@ -194,7 +212,7 @@ for(nlm in numLandmarks){
               )
             }
             ,
-            mc.cores = 2
+            mc.cores = 10
           )
           
           resultsMatrix3D <- as.data.frame(do.call(rbind, resultsMatrix3D))
@@ -227,25 +245,31 @@ for(nlm in numLandmarks){
           )
           
           
-          #ETA tracking
-          completedIterations <- completedIterations + 1
+          # ETA tracking
+          completedIter <- completedIter + 1
           elapsed <- as.numeric(difftime(Sys.time(), startTime, units = "secs"))
-          avgSecsPerIter <- elapsed / completedIterations
-          remainingIters <- totalIterations - completedIterations
-          etaSecs <- avgSecsPerIter * remainingIters
+          avgSecPerIter <- elapsed / completedIter
+          remainingIter <- totalIter - completedIter
+          etaSecs <- avgSecPerIter * remainingIter
           etaTime <- Sys.time() + etaSecs
           
           message(sprintf(
-            "[%d/%d] nlm=%s a=%s nt=%s treeIdx=%d | Elapsed: %.1f min | ETA: %s",
-            completedIterations, totalIterations,
+            "[%d/%d | %.1f%%] nlm=%s | alpha=%.1f | nt=%d | tree=%d | Elapsed: %s | ETA: %s (~%s remaining)",
+            completedIter, totalIter,
+            100 * completedIter / totalIter,
             nlm, a, nt, treeIdx,
-            elapsed / 60,
-            format(etaTime, "%Y-%m-%d %H:%M:%S")
+            format(round(as.difftime(elapsed, units="secs")), format="%H:%M:%S"),
+            format(etaTime, "%H:%M:%S"),
+            format(round(as.difftime(etaSecs, units="secs")), format="%H:%M:%S")
           ))
+          
+          
+          
         }
       
       gc()
     }
+    
   }
 }
 
