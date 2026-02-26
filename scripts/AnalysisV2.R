@@ -196,7 +196,7 @@ for(nlm in numLandmarks){
                 )
               }
             ,
-            mc.cores = 10
+            mc.cores = 12
           )
           resultsMatrix2D <- as.data.frame(do.call(rbind, resultsMatrix2D))
 
@@ -212,7 +212,7 @@ for(nlm in numLandmarks){
               )
             }
             ,
-            mc.cores = 10
+            mc.cores = 12
           )
           
           resultsMatrix3D <- as.data.frame(do.call(rbind, resultsMatrix3D))
