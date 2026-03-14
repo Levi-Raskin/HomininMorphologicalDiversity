@@ -16,8 +16,7 @@ int main(int argc, const char* argv[]) {
     //changing parameters
     std::vector<double> alphas = {0.1, 0.2, 0.3, 0.4};
     std::vector<int> numAdditionalTaxa = {3, 5, 8, 11, 15, 20, 25, 50, 100, 144}; //abstract explicitly mentions 5, 11, 25,50, and 144
-//    std::vector<int> numLandmarks = {10, 25, 50};
-    std::vector<int> numLandmarks = {25, 50};
+    std::vector<int> numLandmarks = {10, 25, 50};
     
     std::string base ="/Users/levir/Documents/GitHub/HomininTaxicDiversity/results/";
     std::string treeIn = "/Users/levir/Documents/GitHub/HomininTaxicDiversity/data/sampledTrees.tsv";

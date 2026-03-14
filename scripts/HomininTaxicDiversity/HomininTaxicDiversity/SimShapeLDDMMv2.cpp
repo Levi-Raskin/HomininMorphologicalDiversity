@@ -1,13 +1,10 @@
 #include "Eigen/Dense"
 #include "Msg.hpp"
 #include "Node.hpp"
-#include "SDE.hpp"
 #include "SimShapeLDDMMv2.hpp"
 #include "Probability.hpp"
 #include "RandomVariable.hpp"
 #include "Utility.hpp"
-#include "ThreadPool.hpp"
-#include "TicToc.hpp"
 #include "Tree.hpp"
 #include "WriteTSV.hpp"
 

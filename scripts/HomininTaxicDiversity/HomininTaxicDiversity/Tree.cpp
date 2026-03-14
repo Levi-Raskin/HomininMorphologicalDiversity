@@ -160,6 +160,69 @@ Node* Tree::addNode(void) {
     return newNode;
 }
  
+void Tree::addNTipsBetaDistTime(int n, double a, double b){
+    RandomVariable& rng = RandomVariable::randomVariableInstance();
+    for(int i = 0; i < n; i++){
+        initializeNodeTimes();
+        
+        //draw the time we're adding the node
+        double timeToAdd = treeHeight * (Probability::Beta::rv(&rng, a, b));
+        
+        //find all the plausible attachment locations for the new tip
+        std::vector<Node*> candidateBranches;
+        for(Node* n : downPassSequence)
+            if(n != root)
+                if((n->getTime() < timeToAdd) && (n->getAncestor()->getTime() > timeToAdd))
+                    candidateBranches.push_back(n);
+                    
+        if(candidateBranches.size() == 0){
+            std::cout << timeToAdd << std::endl;
+            print();
+            std::cout << getNewickString() << std::endl;
+            Msg::error("candidate branches is empty");
+        }
+        
+        //identify branch
+        Node* branchUpper = candidateBranches[(int)(rng.uniformRv() * candidateBranches.size())];
+        Node* branchLower = branchUpper->getAncestor();
+        
+        //get current branch lengths; slice it
+        double currBL = getBranchLength(branchUpper, branchLower);
+        double upperAmt = timeToAdd - branchUpper->getTime();
+        double lowerAmt = currBL - upperAmt;
+        
+        if(upperAmt < 0 || lowerAmt < 0)
+            Msg::error("branch lengths were negative");
+        
+        //new tip, new int instantiation
+        Node* newTip = addNode();
+        newTip->setIsTip(true);
+        newTip->setName("Tip" + std::to_string(i));
+        newTip->setIndex(nodes.size()+1);
+        
+        Node* newInt = addNode();
+        newTip->addNeighbor(newInt);
+        newTip->setAncestor(newInt);
+        newInt->setIndex(nodes.size()+1);
+        
+        //branch stuff
+        removeBranch(branchUpper, branchLower);
+        branchUpper->removeNeighbor(branchLower);
+        branchUpper->addNeighbor(newInt);
+        branchUpper->setAncestor(newInt);
+        newInt->addNeighbor(branchLower);
+        newInt->setAncestor(branchLower);
+        setBranch(newInt, branchUpper, upperAmt);
+        setBranch(newInt, branchLower, lowerAmt);
+        
+        //draw new branch length for new tip
+        double branchLength = Probability::Exponential::rv(&rng, 10);
+        setBranch(newInt, newTip, branchLength);
+        initializeDownPassSequence();
+    }
+}
+
+ 
 void Tree::checkBranchLengthsNeg(void){
     for(auto const& x : branchLengths)
         if(x.second < 0)
@@ -466,6 +529,49 @@ void Tree::initializeDownPassSequence(void) {
     downPassSequence.clear();
     passDown(root, root);
     checkBranchLengthsNeg();
+}
+
+void Tree::initializeNodeTimes(void){
+    initializeTreeHeight();
+    for (std::vector<Node*>::reverse_iterator rit = downPassSequence.rbegin(); rit != downPassSequence.rend(); rit++){
+        Node* n = *rit;
+        if(n==root)
+            n->setTime(treeHeight);
+        else{
+            Node* p = n;
+            Node* pAnc = p->getAncestor();
+            double heightFromRoot = 0.0;
+            while(p != root){
+                pAnc = p->getAncestor();
+                heightFromRoot += getBranchLength(p, pAnc);
+                //std::cout << p->getIndex() << " " << pAnc->getIndex() << std::endl;
+                p = pAnc;
+            };
+//            n->setTime(roundDecimal(treeHeight - heightFromRoot, 4));
+            n->setTime(treeHeight - heightFromRoot);
+        }
+    }
+}
+
+void Tree::initializeTreeHeight(void){
+    double maxHeight = 0.0;
+    treeHeight = 0.0;
+    for(Node* n : downPassSequence){
+        if(n->getIsTip() == true){
+            Node* p = n;
+            Node* pAnc = p->getAncestor();
+            double height = 0.0;
+            while(p != root){
+                pAnc = p->getAncestor();
+                height += getBranchLength(p, pAnc);
+                //std::cout << p->getIndex() << " " << pAnc->getIndex() << std::endl;
+                p = pAnc;
+            };
+            if(height > maxHeight)
+                maxHeight = height;
+        }
+    }
+    treeHeight = maxHeight;
 }
 
 void Tree::keepTips(std::vector<std::string> t){

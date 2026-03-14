@@ -21,6 +21,7 @@ class Tree {
                                             Tree(std::string newick);
                                            ~Tree(void);
         Tree&                               operator=(const Tree& t);
+        void                                addNTipsBetaDistTime(int n, double a, double b);
         void                                checkBranchLengthsNeg(void);
         void                                dropTip(std::string tip);
         void                                dropTip(int idx);
@@ -34,6 +35,8 @@ class Tree {
         Node*                               getRoot(void) { return root; }
         Node*                               getTaxonNode(std::string name);
         void                                initializeDownPassSequence(void);
+        void                                initializeTreeHeight(void);
+        void                                initializeNodeTimes(void);
         void                                keepTips(std::vector<std::string> t);
         void                                print(void);
         void                                print(std::string header);
@@ -61,6 +64,7 @@ class Tree {
         Node*                               freeNode;
         Node*                               root;
         double                              logLik;
+        double                              treeHeight;
         int                                 numTaxa;
 };
 
