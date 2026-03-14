@@ -3,7 +3,7 @@ This GitHub repository contains:
  - R code needed to analyze the results of these simulations
  - Figures from the Raskin et al. (2026) presentation at the PaleoAnthro Society Meetings in Denver
 
-It does not contain the simulation results we analyzed as these require far too much storage. Please reach out to [Levi Raskin](mailto:levi_raskin@berkeley.edu) if you want access to either the raw simulation data or the prossessed (calculated morphospace volume) files and I will figure out how to enable that. This code works and should be sufficient to reproduce our analysis, but be forewarned that this code is not guaranteed in any way. 
+It does not contain the simulation results we analyzed as these require far too much storage. Please reach out to [Levi Raskin](mailto:levi_raskin@berkeley.edu) if you want access to either the raw simulation data or the prossessed (calculated morphospace volume) files and I will figure out how to get that to you. This code works and should be sufficient to reproduce our analysis, but be forewarned that this code is not guaranteed in any way. 
 
 It has 3 subfolders.
 
